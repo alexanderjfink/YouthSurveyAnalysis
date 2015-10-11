@@ -10,5 +10,7 @@ This script will take the raw dataset as-is, clean it in ways we agreed upon as 
 After processing the data, a file should exist entitled spycCleanedAndCoded.csv. This is the data file which should contain a cleaned and coded version of the file. The dashboard will operate based on this file.
 
 To launch a local version of the app, open R, then type:
-  library(shiny)
-  runApp()
+```
+library(shiny)
+runApp()
+```
