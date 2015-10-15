@@ -1,5 +1,4 @@
 # Set to working directory of the data...
-setwd("~/Downloads/SPYC Data/")
 library(data.table)
 library(dplyr)
 library(magrittr)
@@ -183,6 +182,9 @@ str(spyc)
 ##################
 # We're going to want to build some groups
 # Change to the CODED names of columns here...
+
+# How many emails did we get?
+spyc %>% select(Email) %>% filter(Email != "") %>% count()
 
 # View Unfairness / ChangesDevotedTo by School
 spyc %>% group_by(School) %>% select(Unfairness, ChangesDevotedTo)
