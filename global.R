@@ -1,5 +1,3 @@
-setwd("~/Downloads/SPYC Data/")
-
 library(shiny)
 library(tm)
 library(wordcloud)
@@ -71,12 +69,20 @@ neighborhood <- list()
 #######################################
 
 # NOT CURRENTLY Using "memoise" to automatically cache the results
-getTermMatrix <- function(group, by, query, toRemove) {
+
+# "group" is the way you want to group by ("Gender","Race")
+# "by" is the variable to choose ("Male","Female")
+# "query" is Unfairness/DevotedTo by code
+# "toRemove" is the words to remove from the query
+
+getTermMatrix <- memoise(function(group, by, query, toRemove) {
   # Careful not to let just any name slip in here; a
   # malicious user could manipulate this value.
   #if (!(group %in% groups))
   #    stop("Unknown group")
-  
+
+  # if query is CODED version... pull by ", " as separator rather than " "
+
   # Recode to our simplified dummy vars.
   if (group == "Gender") {
     group <- "SimpleGender"
@@ -95,16 +101,34 @@ getTermMatrix <- function(group, by, query, toRemove) {
     text <- spyc %>% select_(as.name(query))
   }
 
-  # Separate toRemove by commasand remove extra spaces...
+  # Separate toRemove by commas and remove extra spaces...
   toRemove <- unlist(strsplit(toRemove, split=", "))
   toRemove <- trim(toRemove)
 
-  myCorpus = Corpus(VectorSource(text))
-  myCorpus = tm_map(myCorpus, content_transformer(tolower))
-  myCorpus = tm_map(myCorpus, removePunctuation)
-  myCorpus = tm_map(myCorpus, removeNumbers)
-  myCorpus = tm_map(myCorpus, removeWords,
-         c(stopwords("SMART"), "the", "and", "but", "are", "that", "they", "much", "many", "dont", toRemove))
+
+  if (query == "CodedUnfairness" || query == "CodedChangesDevotedTo") {
+    text <- unlist(text[ , 1])
+
+    trim <- function (trimmed) gsub("^\\s+|\\s+$", "", trimmed)
+    f <- function(s) {
+      return(strsplit(as.character(s), "[,]"))
+    }
+
+    x <- unlist(sapply(text, f))
+    final <- unlist(lapply(x, trim))
+    final <- gsub(" ", "-", final)
+    myCorpus = Corpus(VectorSource(final))
+    myCorpus = tm_map(myCorpus, removeWords,
+           c(stopwords("SMART"), "the", "and", "but", "are", "that", "they", "much", "many", "dont", toRemove))
+
+  } else {
+    myCorpus = Corpus(VectorSource(text))
+    myCorpus = tm_map(myCorpus, content_transformer(tolower))
+    myCorpus = tm_map(myCorpus, removePunctuation)
+    myCorpus = tm_map(myCorpus, removeNumbers)
+    myCorpus = tm_map(myCorpus, removeWords,
+           c(stopwords("SMART"), "the", "and", "but", "are", "that", "they", "much", "many", "dont", toRemove))
+  }
 
   myDTM = TermDocumentMatrix(myCorpus,
               control = list(minWordLength = 1))
@@ -112,4 +136,4 @@ getTermMatrix <- function(group, by, query, toRemove) {
   m = as.matrix(myDTM)
 
   sort(rowSums(m), decreasing = TRUE)
-}
+})

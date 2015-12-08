@@ -3,3 +3,4 @@ packrat
 .Rprofile
 *.csv
 packrat/lib*/
+*.dat
